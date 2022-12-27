@@ -94,6 +94,17 @@ public class ChatRoomController {
         return "chat/room :: #chats";
     }
 
+    @GetMapping("/history/old")
+    public String getOldHistory(Principal principal, Model model, String roomId){
+        int idx = redisChatRepository.updateCutIdx(roomId);
+        List<ChatDto> chats = redisChatRepository.findPartByChatRoomId(roomId, idx);
+
+        model.addAttribute("creationAvatar", chatRoomService.getCreationAvatar(principal.getName(), roomId));
+
+        model.addAttribute("chats", chats);
+        return "chat/room :: #chatList";
+    }
+
     @PostMapping("/room/create")
     public String createRoom(Principal principal, Model model, ChatRoomForm chatRoomForm) {
 

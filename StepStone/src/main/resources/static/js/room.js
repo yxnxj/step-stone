@@ -206,6 +206,29 @@ function getChats(roomId) {
         });
 }
 
+function getOldHistory() {
+    console.log("chat room click")
+    // if (roomId == $("#currRoomId").val()) {
+    //     console.log("room is identical!");
+    //     return;
+    // }
+    changeSubs($("#currRoomId").val());
+    var chatRoomIdBean = {
+        roomId: $("#currRoomId").val(),
+    };
+
+    $.ajax({
+        url: "/chat/history/old",
+        type: "Get",
+        data: chatRoomIdBean,
+    })
+        .done(function (fragment) {
+            $('#chatList').replaceWith(fragment);
+            // const element = document.getElementById('chats');
+            // element.scrollTop = element.scrollHeight;
+        });
+}
+
 
 function representChatRoomAbout(roomId){
     var chatRoomIdBean = {
