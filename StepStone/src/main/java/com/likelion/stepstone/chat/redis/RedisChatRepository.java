@@ -129,7 +129,7 @@ public class RedisChatRepository {
         Long len = chatRoomRedisTemplate.opsForList().size(key);
 //        int idx = getCutIdx(chatRoomId);
         int pvt = idx * CHAT_SIZE;
-        return len == 0 ? new ArrayList<>() : chatRoomRedisTemplate.opsForList().range(key, len-pvt, len-1-pvt + CHAT_SIZE);
+        return len == 0 ? new ArrayList<>() : chatRoomRedisTemplate.opsForList().range(key, len-pvt, len-1);
     }
 
     public void saveAll(List<ChatDto> items, String chatRoomId){
@@ -161,7 +161,7 @@ public class RedisChatRepository {
     }
 
     @CachePut(value = CacheNames.CUT_IDX)
-    public Integer getCutIdx(String roomId){
+    public Integer updateCutIdx(String roomId){
         String key = RedisKeyGenerator.generateCutIdxKey(roomId);
         Integer idx = 0;
 
@@ -170,6 +170,18 @@ public class RedisChatRepository {
 
 //        cutIdxRedisTemplate.opsForValue().set(key, ++idx);
         return idx + 1;
+    }
+
+    @Cacheable(value = CacheNames.CUT_IDX)
+    public Integer getCutIdx(String roomId){
+        String key = RedisKeyGenerator.generateCutIdxKey(roomId);
+        Integer idx = 1;
+
+        if (cutIdxRedisTemplate.opsForValue().get(key) != null)
+            idx = cutIdxRedisTemplate.opsForValue().get(key);
+
+//        cutIdxRedisTemplate.opsForValue().set(key, ++idx);
+        return idx;
     }
 
 //    @CacheEvict(value=CacheNames.CUT_IDX, allEntries=true)
