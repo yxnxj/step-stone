@@ -12,6 +12,7 @@ import com.likelion.stepstone.user.UserRepository;
 import com.likelion.stepstone.user.model.UserEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataAccessException;
@@ -159,7 +160,7 @@ public class RedisChatRepository {
         return results.stream().map(object -> (ChatDto) object).collect(Collectors.toList());
     }
 
-    @Cacheable(value = CacheNames.CUT_IDX)
+    @CachePut(value = CacheNames.CUT_IDX)
     public Integer getCutIdx(String roomId){
         String key = RedisKeyGenerator.generateCutIdxKey(roomId);
         Integer idx = 0;

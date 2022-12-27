@@ -4,7 +4,7 @@ import com.likelion.stepstone.config.CacheNames;
 
 public class RedisKeyGenerator {
     private static final String CHAT_ROOM_KEY = "chat_room";
-    private static final String CUT_IDX = "cut_idx";
+    private static final String CUT_IDX = "CUT_IDX_CACHE";
     public static String generateChatRoomKey(Long chatRoomCid){
         return CHAT_ROOM_KEY + ":" + chatRoomCid;
     }
@@ -13,6 +13,6 @@ public class RedisKeyGenerator {
         return CHAT_ROOM_KEY + ":" + chatRoomId;
     }
     public static String generateCutIdxKey(String chatRoomId){
-        return CUT_IDX + ":" + chatRoomId;
+        return CUT_IDX + "::" + chatRoomId;
     }
 }
