@@ -1,5 +1,6 @@
 package com.likelion.stepstone.chat.redis;
 
+import com.likelion.stepstone.chat.ChatRepository;
 import com.likelion.stepstone.chat.model.ChatDto;
 import com.likelion.stepstone.chat.model.ChatEntity;
 import com.likelion.stepstone.chat.model.RedisChatEntity;
@@ -44,6 +45,7 @@ public class RedisChatRepository {
     private static final String chatRoomImageUrl = "https://www.bootdey.com/app/webroot/img/Content/icons/64/PNG/64/";
     private final UserRepository userRepository;
     private final ChatRoomRepository chatRoomRepository;
+    private final ChatRepository chatRepository;
     private final RedisChatCrudRepository redisChatCrudRepository;
 
     private final RedisTemplate<String, ChatDto> chatRoomRedisTemplate;
@@ -126,7 +128,10 @@ public class RedisChatRepository {
     @Cacheable(value = CacheNames.CHAT_ROOM)
     public List<ChatDto> findPartByChatRoomId(String chatRoomId, int idx){
         String key = RedisKeyGenerator.generateChatRoomKey(chatRoomId);
-        Long len = chatRoomRedisTemplate.opsForList().size(key);
+//        Long len = chatRoomRedisTemplate.opsForList().size(key);
+        Long len = chatRepository.count();
+        Long roomCid = chatRoomRepository.findByChatRoomId(chatRoomId).get().getChatRoomCid();
+        List<ChatEntity> entities = chatRepository.findRecentChats(roomCid, idx * CHAT_SIZE, (idx + 1) * CHAT_SIZE);
 //        int idx = getCutIdx(chatRoomId);
         int pvt = idx * CHAT_SIZE;
         return len == 0 ? new ArrayList<>() : chatRoomRedisTemplate.opsForList().range(key, len-pvt, len-1);
