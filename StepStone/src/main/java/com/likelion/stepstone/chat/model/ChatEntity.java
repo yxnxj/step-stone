@@ -52,7 +52,7 @@ public class ChatEntity {
 
     @Setter
     @Column(name = "created_at")
-//    @CreatedDate
+    @CreatedDate
     String createdAt;
 
 
