@@ -12,17 +12,20 @@ import com.likelion.stepstone.config.CacheNames;
 import com.likelion.stepstone.user.UserRepository;
 import com.likelion.stepstone.user.model.UserEntity;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.Cache;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 import redis.embedded.Redis;
@@ -50,6 +53,8 @@ public class RedisChatRepository {
 
     private final RedisTemplate<String, ChatDto> chatRoomRedisTemplate;
     private final RedisTemplate<String, Integer> cutIdxRedisTemplate;
+    private final RedisCacheManager cacheManager;
+
     public ChatDto createChat(ChatDto chatDto) {
         addChat(chatDto, chatDto.getChatRoomId());
 //        ChatEntity chatEntity = fromDtoToEntity(chatDto);
@@ -125,16 +130,26 @@ public class RedisChatRepository {
         return len == 0 ? new ArrayList<>() : chatRoomRedisTemplate.opsForList().range(key, 0, len-1);
     }
 
-    @Cacheable(value = CacheNames.CHAT_ROOM)
+    @CachePut(value = CacheNames.CHAT_ROOM)
     public List<ChatDto> findPartByChatRoomId(String chatRoomId, int idx){
         String key = RedisKeyGenerator.generateChatRoomKey(chatRoomId);
 //        Long len = chatRoomRedisTemplate.opsForList().size(key);
         Long len = chatRepository.count();
         Long roomCid = chatRoomRepository.findByChatRoomId(chatRoomId).get().getChatRoomCid();
         List<ChatEntity> entities = chatRepository.findRecentChats(roomCid, idx * CHAT_SIZE, (idx + 1) * CHAT_SIZE);
+        List<ChatDto> dtos = entities.stream().map(ChatDto::toDto).toList();
+        if (dtos.isEmpty()) return new ArrayList<>();
+        Cache cache = cacheManager.getCache(key);
+
+        if((cache != null ? cache.get(key) : null) == null){
+            return dtos;
+        }
+
+        chatRoomRedisTemplate.opsForList().rightPushAll(key, dtos);
+
 //        int idx = getCutIdx(chatRoomId);
-        int pvt = idx * CHAT_SIZE;
-        return len == 0 ? new ArrayList<>() : chatRoomRedisTemplate.opsForList().range(key, len-pvt, len-1);
+//        int pvt = idx * CHAT_SIZE;
+        return chatRoomRedisTemplate.opsForList().range(key, 0 ,len);
     }
 
     public void saveAll(List<ChatDto> items, String chatRoomId){
