@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface ChatRepository extends JpaRepository<ChatEntity, Long> {
     List<ChatEntity> findByChatRoomEntity(ChatRoomEntity chatRoomEntity);
-    @Query(nativeQuery = true, value="SELECT * FROM chats as chat WHERE chat.chatRoomEntity_chat_room_cid = :roomCid ORDER BY created_at DESC LIMIT :start OFFSET :end")
+    @Query(nativeQuery = true, value="SELECT * FROM chats as chat WHERE chat.chatRoomEntity_chat_room_cid = :roomCid ORDER BY chat_cid ASC LIMIT :start OFFSET :end")
     List<ChatEntity> findRecentChats(@Param("roomCid") Long roomCid, @Param("start") Integer start, @Param("end") Integer end);
 
 //    ChatEntity findByChatId(String chatId);
