@@ -118,21 +118,21 @@ public class RedisChatRepository {
 
 
     public void addChat(ChatDto chatDto, String chatRoomId){
-        String key = RedisKeyGenerator.generateChatRoomKey(chatRoomId);
+        String key = ChatRoomCacheKeyGenerator.generateChatRoomKey(chatRoomId);
 //        List<ChatDto> chats = findByChatRoomId(chatRoomId);
 //        chats.add(chatDto);
         chatRoomRedisTemplate.opsForList().rightPush(key, chatDto);
     }
-    @Cacheable(value = CacheNames.CHAT_ROOM)
+    @Cacheable(keyGenerator = "chatRoomCacheKeyGenerator", value = CacheNames.CHAT_ROOM)
     public List<ChatDto> findByChatRoomId(String chatRoomId){
-        String key = RedisKeyGenerator.generateChatRoomKey(chatRoomId);
+        String key = ChatRoomCacheKeyGenerator.generateChatRoomKey(chatRoomId);
         Long len = chatRoomRedisTemplate.opsForList().size(key);
         return len == 0 ? new ArrayList<>() : chatRoomRedisTemplate.opsForList().range(key, 0, len-1);
     }
 
-    @CachePut(value = CacheNames.CHAT_ROOM)
+    @CachePut(keyGenerator = "chatRoomCacheKeyGenerator", value = CacheNames.CHAT_ROOM)
     public List<ChatDto> findPartByChatRoomId(String chatRoomId, int idx){
-        String key = RedisKeyGenerator.generateChatRoomKey(chatRoomId);
+        String key = ChatRoomCacheKeyGenerator.generateChatRoomKey(chatRoomId);
 //        Long len = chatRoomRedisTemplate.opsForList().size(key);
         Long len = chatRepository.count();
         Long roomCid = chatRoomRepository.findByChatRoomId(chatRoomId).get().getChatRoomCid();
@@ -158,7 +158,7 @@ public class RedisChatRepository {
 
         chatRoomRedisTemplate.executePipelined((RedisCallback<Object>) connection -> {
             items.forEach(chatDto -> {
-                String key = RedisKeyGenerator.generateChatRoomKey(chatRoomId);
+                String key = ChatRoomCacheKeyGenerator.generateChatRoomKey(chatRoomId);
                 connection.listCommands().rPush(keySerializer.serialize(key),
                         valueSerializer.serialize(chatDto));
             });
@@ -167,7 +167,7 @@ public class RedisChatRepository {
     }
     @Cacheable(value = CacheNames.CHAT_ROOM)
     public List<ChatDto> readAll(String chatRoomId){
-        String key = RedisKeyGenerator.generateChatRoomKey(chatRoomId);
+        String key = ChatRoomCacheKeyGenerator.generateChatRoomKey(chatRoomId);
         Long len = chatRoomRedisTemplate.opsForList().size(key);
         RedisSerializer keySerializer = chatRoomRedisTemplate.getStringSerializer();
         List<Object> results = chatRoomRedisTemplate.executePipelined((RedisCallback<Object>) connection -> {
@@ -180,9 +180,9 @@ public class RedisChatRepository {
         return results.stream().map(object -> (ChatDto) object).collect(Collectors.toList());
     }
 
-    @CachePut(value = CacheNames.CUT_IDX)
+    @CachePut(keyGenerator = "cutIdxCacheKeyGenerator", value = CacheNames.CUT_IDX)
     public Integer updateCutIdx(String roomId){
-        String key = RedisKeyGenerator.generateCutIdxKey(roomId);
+        String key = CutIdxCacheKeyGenerator.generateCutIdxKey(roomId);
         Integer idx = 0;
 
         if (cutIdxRedisTemplate.opsForValue().get(key) != null)
@@ -192,9 +192,9 @@ public class RedisChatRepository {
         return idx + 1;
     }
 
-    @Cacheable(value = CacheNames.CUT_IDX)
+    @Cacheable(keyGenerator = "cutIdxCacheKeyGenerator", value = CacheNames.CUT_IDX)
     public Integer getCutIdx(String roomId){
-        String key = RedisKeyGenerator.generateCutIdxKey(roomId);
+        String key = CutIdxCacheKeyGenerator.generateCutIdxKey(roomId);
         Integer idx = 1;
 
         if (cutIdxRedisTemplate.opsForValue().get(key) != null)

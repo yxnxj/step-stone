@@ -2,9 +2,13 @@ package com.likelion.stepstone.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.likelion.stepstone.chat.model.ChatDto;
+import com.likelion.stepstone.chat.redis.ChatRoomCacheKeyGenerator;
+import com.likelion.stepstone.chat.redis.CutIdxCacheKeyGenerator;
+import com.likelion.stepstone.chat.redis.RedisKeyGenerator;
 import com.likelion.stepstone.chat.redis.RedisSubscriber;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
@@ -20,6 +24,7 @@ import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
+import redis.embedded.Redis;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -102,6 +107,15 @@ public class RedisConfig {
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
         return new LettuceConnectionFactory();
+    }
+    @Bean
+    public KeyGenerator chatRoomCacheKeyGenerator(){
+        return new ChatRoomCacheKeyGenerator();
+    }
+
+    @Bean
+    public KeyGenerator cutIdxCacheKeyGenerator(){
+        return new CutIdxCacheKeyGenerator();
     }
     @Bean
     public RedisCacheManager redisCacheManager() {
