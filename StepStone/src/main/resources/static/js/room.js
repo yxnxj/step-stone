@@ -223,7 +223,7 @@ function getOldHistory() {
         data: chatRoomIdBean,
     })
         .done(function (fragment) {
-            $('#chatList').replaceWith(fragment);
+            $('#chats').replaceWith(fragment);
             // const element = document.getElementById('chats');
             // element.scrollTop = element.scrollHeight;
         });

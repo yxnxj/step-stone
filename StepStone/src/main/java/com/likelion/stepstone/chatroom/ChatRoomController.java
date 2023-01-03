@@ -97,12 +97,18 @@ public class ChatRoomController {
     @GetMapping("/history/old")
     public String getOldHistory(Principal principal, Model model, String roomId){
         int idx = redisChatRepository.updateCutIdx(roomId);
-        List<ChatDto> chats = redisChatRepository.findPartByChatRoomId(roomId, idx);
 
+        List<ChatDto> chats = redisChatRepository.findPartByChatRoomId(roomId, idx);
+        List<UserDto> users = chatRoomService.findAllUserDtoInChatRoom(roomId);
+
+        model.addAttribute("usersInChatRoom", users);
         model.addAttribute("creationAvatar", chatRoomService.getCreationAvatar(principal.getName(), roomId));
 
         model.addAttribute("chats", chats);
-        return "chat/room :: #chatList";
+        model.addAttribute("roomId", roomId);
+        model.addAttribute("senderId", principal.getName());
+        model.addAttribute("name", chatRoomService.getUsername(principal.getName()));
+        return "chat/room :: #chats";
     }
 
     @PostMapping("/room/create")
