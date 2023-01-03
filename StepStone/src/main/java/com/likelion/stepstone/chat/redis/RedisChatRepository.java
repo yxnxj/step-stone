@@ -1,36 +1,30 @@
 package com.likelion.stepstone.chat.redis;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.likelion.stepstone.chat.ChatRepository;
 import com.likelion.stepstone.chat.model.ChatDto;
 import com.likelion.stepstone.chat.model.ChatEntity;
 import com.likelion.stepstone.chat.model.RedisChatEntity;
+import com.likelion.stepstone.chatroom.ChatRoomJoinRepository;
 import com.likelion.stepstone.chatroom.ChatRoomRepository;
 import com.likelion.stepstone.chatroom.exception.DataNotFoundException;
-import com.likelion.stepstone.chatroom.model.ChatRoomDto;
 import com.likelion.stepstone.chatroom.model.ChatRoomEntity;
+import com.likelion.stepstone.chatroom.model.ChatRoomUserJoinEntity;
 import com.likelion.stepstone.config.CacheNames;
 import com.likelion.stepstone.user.UserRepository;
-import com.likelion.stepstone.user.model.UserEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.cache.RedisCacheManager;
-import org.springframework.data.redis.connection.RedisConnection;
-import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.serializer.RedisSerializer;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
-import redis.embedded.Redis;
 
-import javax.annotation.Resource;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -51,6 +45,7 @@ public class RedisChatRepository {
     private final ChatRepository chatRepository;
     private final RedisChatCrudRepository redisChatCrudRepository;
 
+    private final ChatRoomJoinRepository chatRoomJoinRepository;
     private final RedisTemplate<String, ChatDto> chatRoomRedisTemplate;
     private final RedisTemplate<String, Integer> cutIdxRedisTemplate;
     private final RedisCacheManager cacheManager;
@@ -137,7 +132,17 @@ public class RedisChatRepository {
         Long len = chatRepository.count();
         Long roomCid = chatRoomRepository.findByChatRoomId(chatRoomId).get().getChatRoomCid();
         List<ChatEntity> entities = chatRepository.findRecentChats(roomCid, idx * CHAT_SIZE, (idx + 1) * CHAT_SIZE);
-        List<ChatDto> dtos = entities.stream().map(ChatDto::toDto).toList();
+//        List<ChatDto> dtos = entities.stream().map(ChatDto::toDto).toList();
+        List<ChatRoomUserJoinEntity> chatRoomUserJoinEntities = chatRoomJoinRepository.findByIdChatRoomCid(roomCid);
+        List<ChatDto> dtos = entities.stream()
+                .map(ChatDto::toDto)
+                .peek(chatDto -> {
+                    for (ChatRoomUserJoinEntity chatRoomUserJoinEntity : chatRoomUserJoinEntities){
+                        if(Objects.equals(chatDto.getSenderId(), chatRoomUserJoinEntity.getUserEntity().getUserId()))
+                            chatDto.setProfileImageUrl(chatRoomUserJoinEntity.getProfileImageUrl());
+                    }
+                })
+                .collect(Collectors.toList());
         if (dtos.isEmpty()) return new ArrayList<>();
         Cache cache = cacheManager.getCache(key);
 
