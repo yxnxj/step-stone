@@ -141,15 +141,35 @@ public class RedisChatRepository {
         if (dtos.isEmpty()) return new ArrayList<>();
         Cache cache = cacheManager.getCache(key);
 
-        if((cache != null ? cache.get(key) : null) == null){
+        if(cacheManager.getCache(key) == null){
             return dtos;
         }
 
-        chatRoomRedisTemplate.opsForList().rightPushAll(key, dtos);
+//        List<ChatDto> cacheChats =  chatRoomRedisTemplate.opsForList().range(key, 0 ,len);
+        String jsonChats = String.valueOf(chatRoomRedisTemplate.opsForValue().get(key));
+        if (jsonChats.equals("null")) return dtos;
+        ObjectMapper mapper = new ObjectMapper();
 
+        List<ChatDto> resultChats = new ArrayList<>();
+        try {
+            List<ChatDto> cacheChats = Arrays.asList(mapper.readValue(jsonChats, ChatDto[].class));
+            resultChats.addAll(cacheChats);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+
+        resultChats.addAll(dtos);
+
+//        chatRoomRedisTemplate.opsForList().rightPushAll(key, dtos);
+//        assert cacheChats != null;
+        cacheManager.getCache(CacheNames.CHAT_ROOM).clear();
+
+        return resultChats;
 //        int idx = getCutIdx(chatRoomId);
 //        int pvt = idx * CHAT_SIZE;
-        return chatRoomRedisTemplate.opsForList().range(key, 0 ,len);
+//        return chatRoomRedisTemplate.opsForList().range(key, 0 ,len);
+//        return null;
     }
 
     public void saveAll(List<ChatDto> items, String chatRoomId){
