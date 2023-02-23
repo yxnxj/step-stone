@@ -7,6 +7,7 @@ import com.likelion.stepstone.chat.redis.CutIdxCacheKeyGenerator;
 import com.likelion.stepstone.chat.redis.RedisKeyGenerator;
 import com.likelion.stepstone.chat.redis.RedisSubscriber;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
@@ -104,9 +105,16 @@ public class RedisConfig {
         redisTemplate.setValueSerializer(genericJackson2JsonRedisSerializer);
         return redisTemplate;
     }
+
+    @Value("${spring.redis.host}")
+    private String redisHost;
+
+    @Value("${spring.redis.port}")
+    private int redisPort;
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
-        return new LettuceConnectionFactory();
+        LettuceConnectionFactory lettuceConnectionFactory = new LettuceConnectionFactory(redisHost, redisPort);
+        return lettuceConnectionFactory;
     }
     @Bean
     public KeyGenerator chatRoomCacheKeyGenerator(){
