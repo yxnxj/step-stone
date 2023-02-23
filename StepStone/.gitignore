@@ -121,4 +121,5 @@ fabric.properties
 # End of https://www.toptal.com/developers/gitignore/api/intellij
 
 src/main/resources/application.yml
+src/main/resources/application-prod.yml
 src/main/generated
